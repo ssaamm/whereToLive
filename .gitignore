@@ -1,4 +1,6 @@
 *.html
+!out.html
 *.txt
+!cityList.txt
 *.pyc
 keys.py
