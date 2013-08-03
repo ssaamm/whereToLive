@@ -175,7 +175,7 @@ def weather(city, state):
     #
     # Return value: a string containing the weather information. Formatted with
     #   HTML.
-    def seasonInfo(zip, seasonCode, attempt):
+    def seasonInfo(zip, seasonCode):
         seasonToMonth = [[12, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
         dCollection = {"DT90":0}
         for monthCode in seasonToMonth[seasonCode]:
@@ -219,7 +219,7 @@ def weather(city, state):
         exceptionThrown = True
         while exceptionThrown and zipNdx < len(zips):
             try:
-                seasonHTML = seasonInfo(zips[zipNdx], i, 0)
+                seasonHTML = seasonInfo(zips[zipNdx], i)
                 exceptionThrown = False
             except TypeError:
                 zipNdx += 1
