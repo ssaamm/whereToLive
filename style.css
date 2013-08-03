@@ -1,0 +1,37 @@
+body {
+	background-color: #f4f4f4;
+	font-family:  'Times New Roman', serif;
+	color: #000;
+}
+
+#content {
+    background-color: #ffffff;
+    border: 1px solid black;
+    margin: 10px 7%;
+    padding: 0px 3% 10px;
+}
+
+h1 {
+	font-size: 48px;
+	text-align: center;
+}
+
+h2 {
+    font-size: 36px;
+    margin-bottom: 0px;
+}
+
+h3 {
+    font-size: 18px;
+    margin-left: 30px;
+    margin-bottom: 0px;
+}
+
+p {
+    font-size: 18px;
+    margin-left: 45px;
+}
+
+strong {
+	font-style: bold;
+}

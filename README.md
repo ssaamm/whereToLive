@@ -8,4 +8,4 @@ You're going to need to make a file called "keys.py" which contains API keys.
 
 ## Usage
 
-    python live.py < cityList.txt
+    python live.py < cityList.txt > out.html
