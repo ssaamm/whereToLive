@@ -10,8 +10,16 @@ ZWS_KEY = keys.ZWS_KEY
 EDU_KEY = keys.EDU_KEY 
 NCDC_KEY = keys.NCDC_KEY 
 
+# mean
+#
+# Calculates the arithmetic mean of a list of numbers
+#
+# Parameters:
+#   listOfNumbers: the list of numbers for which the mean should be calculated
+#
+# Return value: the arithmetic mean of the given numbers
 def mean(listOfNumbers):
-    mean = -1
+    mean = -1.0
     sum = 0.0
     count = len(listOfNumbers)
     for number in listOfNumbers:
@@ -20,8 +28,17 @@ def mean(listOfNumbers):
         mean = sum/count
     return mean
 
+# median
+#
+# Calculates the median of a sorted list of numbers
+#
+# Parameters:
+#   sortedListOfNumbers: a sorted list of numbers for which the median should be
+#       calculated
+#
+# Return value: the median of the given numbers
 def median(sortedListOfNumbers):  
-    median = -1
+    median = -1.0
     count = len(sortedListOfNumbers)
     if count % 2 == 1:
         median = sortedListOfNumbers[count/2]
@@ -31,18 +48,41 @@ def median(sortedListOfNumbers):
         median = (first + second)/2
     return median
 
+# getRange
+#
+# Calculates the range of a sorted list of numbers
+# 
+# (Calling it "range" would conflict with Python's range function)
+#
+# Parameters:
+#   sortedListOfNumbers: a sorted list of numbers for which the range should be
+#       calculated
+#
+# Return value: the range of the list of numbers
 def getRange(sortedListOfNumbers):
-    range = -1
+    range = -1.0
     count = len(sortedListOfNumbers)
     if count > 0:
         range = sortedListOfNumbers[count-1] - sortedListOfNumbers[0]
     return range
 
-def stddevSample(listOfNumbers):
-    stddev = -1
+# stdDevS
+#
+# Calculates the standard deviation of a sample. Standard deviation of a sample
+# is defined as sqrt((1/N) * the sum from i=1 to N of (x sub i - x bar)^2).
+# (I think in LaTeX that would be
+#   s = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2} )
+#
+# Parameters:
+#   listOfNumbers: a sample of numbers for which the standard deviation should
+#       be calculated
+#
+# Return value: the standard deviation of the sample
+def stdDevS(listOfNumbers):
+    stddev = -1.0
     count = len(listOfNumbers)
     if count > 1:
-        stddev = 0
+        stddev = 0.0
         theMean = mean(listOfNumbers)
         for number in listOfNumbers:
             stddev += (number - theMean)**2
@@ -50,14 +90,25 @@ def stddevSample(listOfNumbers):
         stddev = math.sqrt(stddev)
     return stddev
 
-# returns a list, the first member of which is the latitude, with the second mem-
-# ber being the longitude
+# latLon
+#
+# Gets the latitude and longitude for a city from the Zillow web service
+#
+# Parameters:
+#   city: the name of the city for which to get the latitude and longitude
+#   state: the state in which the city is
+#
+# Return value: a list with the first member being the latitude and the second
+#   member being the longitude
+# In the case of a non-successful lookup, [0.0, 0.0] is returned
 def latLon(city, state):
     latLon = []
-    demoRequest = urllib.urlopen("http://www.zillow.com/webservice/GetDemographics.htm?"
-        + "zws-id=" + ZWS_KEY + "&city=" + city + "&state=" + state)
+    demoRequest = urllib.urlopen("http://www.zillow.com/webservice/" + 
+            "GetDemographics.htm?zws-id=" + ZWS_KEY + "&city=" + city +
+            "&state=" + state)
     demoXML = ET.parse(demoRequest).getroot()
-    if demoXML.find("message").find("code").text != "0":# API defines 0 as success
+    # API defines 0 as success
+    if demoXML.find("message").find("code").text != "0":
         latLon.append("0.0")
         latLon.append("0.0")
         return latLon
@@ -65,12 +116,33 @@ def latLon(city, state):
     latLon.append(demoXML.find("response").find("region").find("longitude").text)
     return latLon
 
+# getZIPs
+#
+# Gets the ZIP codes for a given city from redline13's API
+#
+# Parameters:
+#   city: the name of the city for which to find ZIP codes
+#   state: the state in which the city is
+#
+# Return value: a list of zip codes for the given city 
 def getZIPs(city, state):
-    zipRequest = urllib.urlopen("http://zipcodedistanceapi.redline13.com/rest/" +
-        "city-zips.json/" + city + "/" + state)
+    zipRequest = urllib.urlopen("http://zipcodedistanceapi.redline13.com/rest/" 
+            + "city-zips.json/" + city + "/" + state)
     zipJSON = json.load(zipRequest)
     return zipJSON["zip_codes"]
 
+# weather
+#
+# Gets information on weather of a given city from the NOAA API. Groups the
+# information into seasons. Looks up data from the year 2008.
+#
+# (I am not a fan on the way I wrote this)
+#
+# Parameters:
+#   city: the name of the city for which to get weather information
+#   state: the state in which the city is
+#
+# Return value: a string containing the weather information (formatted in HTML)
 def weather(city, state):
     def nameOf(NOAACode):
         try:
@@ -93,10 +165,9 @@ def weather(city, state):
         dCollection = {"DT90":0}
         for monthCode in seasonToMonth[seasonCode]:
             time.sleep(1)
-            theURL = ("http://www.ncdc.noaa.gov/cdo-services/services/datasets/" + 
-                "GHCNDMS/locations/ZIP:" + str(zip) + "/data.json?year=2008&month=" +
-                str(monthCode) + "&token=" + NCDC_KEY)
-            #print "<br><a href=\"" + theURL + "\">" + str(zip) + "</a>"
+            theURL = ("http://www.ncdc.noaa.gov/cdo-services/services/datasets/"
+                    + "GHCNDMS/locations/ZIP:" + str(zip) + "/data.json?year="
+                    + "2008&month=" + str(monthCode) + "&token=" + NCDC_KEY)
             monthRequest = urllib.urlopen(theURL)
             monthJSON = json.load(monthRequest)
             data = monthJSON["dataCollection"]["data"]
@@ -128,22 +199,28 @@ def weather(city, state):
         seasonHTML = ""
         exceptionThrown = True
         while exceptionThrown and zipNdx < len(zips):
-            #print "### " + str(exceptionThrown)
             try:
                 seasonHTML = seasonInfo(zips[zipNdx], i, 0)
                 exceptionThrown = False
-                #print "<p>Exception not thrown</p><br>"
             except TypeError:
-                #print "<p>TypeError " + str(zips[zipNdx]) + "</p><br>"
                 zipNdx += 1
-        weatherHTML += "<h3>" + seasons[i] + " monthly averages</h3>\n" + seasonHTML
+        weatherHTML += ("<h3>" + seasons[i] + " monthly averages</h3>\n" +
+                seasonHTML)
     return weatherHTML
 
-# http://www.zillow.com/howto/api/GetRateSummary.htm
-# TODO: Cache state data (eg there's more than one city in CA)
-def zillowMortgage(city, state):
+# zillowMortgage
+#
+# Gets info from the Zillow web service about mortgages in a given state
+#
+# Parameters:
+#   state: the state for which mortgage data should be found
+#
+# Return value: a string containing mortgage information (formatted with HTML)
+# On non-success, returns the message information from the API
+def zillowMortgage(state):
     mortgageRequest = urllib.urlopen("http://www.zillow.com/webservice/" + 
-        "GetRateSummary.htm?zws-id=" + ZWS_KEY + "&state=" + state + "&output=json")
+        "GetRateSummary.htm?zws-id=" + ZWS_KEY + "&state=" + state +
+        "&output=json")
     mortgage = json.load(mortgageRequest)
     if mortgage["message"]["code"] != "0":# API defines "0" as success
         return "<p>zillowMortgage: " + mortgage["message"]["text"] + "</p>"
@@ -158,14 +235,24 @@ def zillowMortgage(city, state):
                     "<p><strong>5/1 adjustable rate loans:</strong> " +
                     lastWeek["fiveOneARM"] + "% (from " +
                     lastWeek["fiveOneARMCount"] + " quotes)</p>\n" +
-                    "<p>See <a href=\"http://www.zillow.com/mortgage-rates/\">" +
-                    "mortgage rates</a> on Zillow</p>")
+                    "<p>See <a href=\"http://www.zillow.com/mortgage-rates/\">"
+                    + "mortgage rates</a> on Zillow</p>")
     return mortgageHTML
 
+# schoolRatings
+#
+# Gets school rating information from the education.com API
+#
+# Parameters:
+#   city: the city for which to find school ratings
+#   state: the state in which the city is
+#
+# Return value: a string containing school ratings information (formatted with
+#   HTML) 
 def schoolRatings(city, state):
-    rateRequest = urllib.urlopen("http://api.education.com/service/service.php?" +
-        "f=getTestRating&key=" + EDU_KEY + "&sn=sf&v=4&city=" + city + "&state=" +
-        state + "&Resf=json")
+    rateRequest = urllib.urlopen("http://api.education.com/service/service.php?"
+            + "f=getTestRating&key=" + EDU_KEY + "&sn=sf&v=4&city=" + city +
+            "&state=" + state + "&Resf=json")
     ratingsList = []
     ratings = json.load(rateRequest)
     for schoolObj in ratings:
@@ -179,13 +266,27 @@ def schoolRatings(city, state):
             pass
     ratingsList.sort()
     rateHTML = "<h2>School ratings (1-10)</h2>\n"
-    rateHTML += ("<p><strong>Number of ratings:</strong> " + str(len(ratingsList)) + "<br>\n" +
-        "<strong>Arithmetic mean:</strong> " + str(round(mean(ratingsList), 3)) + "<br>\n" +
-        "<strong>Standard deviation:</strong> " + str(round(stddevSample(ratingsList), 3)) + "<br>\n" +
-        "<strong>Median:</strong> " + str(median(ratingsList)) + "<br>\n" +
-        "<strong>Range:</strong> " + str(getRange(ratingsList)) + "</p>")
+    rateHTML += ("<p><strong>Number of ratings:</strong> " + 
+            str(len(ratingsList)) + "<br>\n" + 
+            "<strong>Arithmetic mean:</strong> " +
+            str(round(mean(ratingsList), 3)) + "<br>\n" +
+            "<strong>Standard deviation:</strong> " +
+            str(round(stdDevS(ratingsList), 3)) + "<br>\n" +
+            "<strong>Median:</strong> " + str(median(ratingsList)) + "<br>\n" +
+            "<strong>Range:</strong> " + str(getRange(ratingsList)) + "</p>")
     return rateHTML
 
+# zillowDemographics
+#
+# Gets some demographics information about a given city from the Zillow web
+# service
+#
+# Parameters:
+#   city: the city for which to find school ratings
+#   state: the state in which the city is
+#
+# Return value: a string containing demographics information (formatted with
+#   HTML)
 def zillowDemographics(city, state):
     def pageHTML(page):
         pageH = "<h2>" + page.find("name").text + "</h2>\n"
@@ -215,15 +316,16 @@ def zillowDemographics(city, state):
             attrHTML += attr.find("value").text + "</p>"
         return attrHTML
     
-    zillowDemographics.names = ["Zillow Home Value Index", "Median 3-Bedroom Home Value",
-        "Median Home Size (Sq. Ft.)", "Avg. Year Built", "Median Household Income",
-        "Median Age"]
-    zillowDemographics.tables = ["Affordability Data", "Homes & Real Estate Data",
-        "People Data"]
+    zillowDemographics.names = ["Zillow Home Value Index",
+            "Median 3-Bedroom Home Value", "Median Home Size (Sq. Ft.)",
+            "Avg. Year Built", "Median Household Income",
+            "Median Age"]
+    zillowDemographics.tables = ["Affordability Data",
+            "Homes & Real Estate Data", "People Data"]
     
     demoHTML = ""
-    demoRequest = urllib.urlopen("http://www.zillow.com/webservice/GetDemographics.htm?"
-        + "zws-id=" + ZWS_KEY + "&city=" + city + "&state=" + state)
+    demoRequest = urllib.urlopen("http://www.zillow.com/webservice/GetDemogr" +
+            "aphics.htm?zws-id=" + ZWS_KEY + "&city=" + city + "&state=" + state)
     demoXML = ET.parse(demoRequest).getroot()
     if demoXML.find("message").find("code").text != "0":# API defines 0 as success
         error = "<p>zillowDemographics: "
@@ -270,7 +372,7 @@ for line in sys.stdin:
     print
     print zillowDemographics(city, state)
     print
-    print zillowMortgage(city, state)
+    print zillowMortgage(state)
 
 print "</div>"
 print "<p>Mortgage and demographics data (c) Zillow, Inc., 2006-2013. Use is subject to <a href=\"http://www.zillow.com/corp/Terms.htm\">Terms of Use</a><br>"
