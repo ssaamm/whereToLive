@@ -37,6 +37,7 @@ def mean(listOfNumbers):
 #       calculated
 #
 # Return value: the median of the given numbers
+# If the list is empty, this returns -1.0
 def median(sortedListOfNumbers):  
     median = -1.0
     count = len(sortedListOfNumbers)
@@ -59,6 +60,7 @@ def median(sortedListOfNumbers):
 #       calculated
 #
 # Return value: the range of the list of numbers
+# If the list is empty, this returns -1.0
 def getRange(sortedListOfNumbers):
     range = -1.0
     count = len(sortedListOfNumbers)
@@ -78,6 +80,7 @@ def getRange(sortedListOfNumbers):
 #       be calculated
 #
 # Return value: the standard deviation of the sample
+# If the list is empty, this returns -1.0
 def stdDevS(listOfNumbers):
     stddev = -1.0
     count = len(listOfNumbers)
@@ -102,18 +105,16 @@ def stdDevS(listOfNumbers):
 #   member being the longitude
 # In the case of a non-successful lookup, [0.0, 0.0] is returned
 def latLon(city, state):
-    latLon = []
+    latLon = [0.0, 0.0]
     demoRequest = urllib.urlopen("http://www.zillow.com/webservice/" + 
             "GetDemographics.htm?zws-id=" + ZWS_KEY + "&city=" + city +
             "&state=" + state)
     demoXML = ET.parse(demoRequest).getroot()
     # API defines 0 as success
     if demoXML.find("message").find("code").text != "0":
-        latLon.append("0.0")
-        latLon.append("0.0")
         return latLon
-    latLon.append(demoXML.find("response").find("region").find("latitude").text)
-    latLon.append(demoXML.find("response").find("region").find("longitude").text)
+    latLon[0] = demoXML.find("response").find("region").find("latitude").text
+    latLon[1] = demoXML.find("response").find("region").find("longitude").text
     return latLon
 
 # getZIPs
