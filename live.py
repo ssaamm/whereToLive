@@ -161,6 +161,20 @@ def weather(city, state):
             value *= 1.8
             value += 32.0
         return ("<strong>" + name + ":</strong> " + str(round((value), 2)))
+
+    # seasonInfo
+    #
+    # Averages monthly weather data within a given season. The data is from the
+    # 2008 NOAA data.
+    #
+    # Parameters
+    #   zip: the zip code for which to find the weather data
+    #   seasonCode: the number corresponding with the season for which the
+    #       weather should be found. 1 is Winter, 2 is Spring, 3 is Summer, and
+    #       4 is Fall.
+    #
+    # Return value: a string containing the weather information. Formatted with
+    #   HTML.
     def seasonInfo(zip, seasonCode, attempt):
         seasonToMonth = [[12, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
         dCollection = {"DT90":0}
@@ -182,6 +196,8 @@ def weather(city, state):
             seasonHTML += (formatData(key, val) + "<br>\n")
         seasonHTML += "</p>"
         return seasonHTML
+    # Setting it as a property of the function because apparently Python doesn't
+    # have "static"
     seasonInfo.names = {"MMXT":"Mean max temp", "MMNT":"Mean min temp",
         "EMXT":"Max temp", "EMNT":"Min temp",
         "MNTM":"Mean temp", "HTDD":"Heating degree days",
@@ -198,6 +214,8 @@ def weather(city, state):
     seasons = ["Winter", "Spring", "Summer", "Fall"]
     for i in range(4):
         seasonHTML = ""
+        # This loop's purpose is to find the weather data for the first zip code
+        # for the city that actually has weather data associated with it
         exceptionThrown = True
         while exceptionThrown and zipNdx < len(zips):
             try:
