@@ -145,12 +145,39 @@ def getZIPs(city, state):
 #
 # Return value: a string containing the weather information (formatted in HTML)
 def weather(city, state):
+
+    # nameOf
+    #
+    # Converts the NOAA abbreviation for a measurement to a more readable 
+    # string. Ex: weather(MMXT) == "Mean max temp"
+    #
+    # Parameters:
+    #   NOAACode: the abbreviation from the NOAA for the measurement
+    #
+    # Return value: a more descriptive/readable string to describe the
+    #   measurment.
+    # If a more descriptive string is not found, the NOAA code is returned
     def nameOf(NOAACode):
         try:
             name = str(seasonInfo.names[str(NOAACode)])
         except KeyError:
             name = str(NOAACode)
         return name
+
+    # formatData
+    #
+    # Formats data with its name. Celsius values are converted to fahrenheit.
+    # If the data type is in the "pointOnes" array, it is multiplied by 0,1.
+    # The values refered to by that array all come out of the API multiplied by
+    # 10 for some reason.
+    #
+    # Parameters
+    #   dataType: the NOAA code given for the data (by the NOAA API)
+    #   value: the value that corresponds to the given NOAA code
+    #
+    # Return value: a string with the descriptive name of the value as well as
+    #   the value itself. Note that the value may be different from the passed-
+    #   in value, as described above.
     def formatData(dataType, value):
         pointOnes = ["CLDD", "MNTM", "EMXT", "EMNT", "MMXT", "MMNT"]
         toFahr = ["MNTM", "EMXT", "EMNT", "MMXT", "MMNT"]
@@ -179,39 +206,47 @@ def weather(city, state):
         seasonToMonth = [[12, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
         dCollection = {"DT90":0}
         for monthCode in seasonToMonth[seasonCode]:
-            time.sleep(1)
-            theURL = ("http://www.ncdc.noaa.gov/cdo-services/services/datasets/"
+            time.sleep(1) # NOAA API only allows 1 request/s. I really need a
+                          # better solution than this.
+            URL = ("http://www.ncdc.noaa.gov/cdo-services/services/datasets/"
                     + "GHCNDMS/locations/ZIP:" + str(zip) + "/data.json?year="
                     + "2008&month=" + str(monthCode) + "&token=" + NCDC_KEY)
-            monthRequest = urllib.urlopen(theURL)
+            monthRequest = urllib.urlopen(URL)
             monthJSON = json.load(monthRequest)
             data = monthJSON["dataCollection"]["data"]
             for datum in data:
                 key = datum["dataType"][0]
+                # Add the value of the datum to the previous value for the datum
+                # in the collection of data.
+                # If there is no such previous value, the datum is added to the
+                # data collection
                 dCollection[key] = dCollection.get(key, 0) + datum["value"]
         
         seasonHTML = "<p>"
         for key in dCollection.keys():
+            # Because the data collection has been accumulating values for each
+            # month in the season, it must be divided by the number of months in
+            # the season.
             val = 1.0*dCollection[key]/len(seasonToMonth[seasonCode])
             seasonHTML += (formatData(key, val) + "<br>\n")
         seasonHTML += "</p>"
         return seasonHTML
-    # Setting it as a property of the function because apparently Python doesn't
-    # have "static"
+    # Setting this dictionary as a property of the function because apparently
+    # Python doesn't have "static"
     seasonInfo.names = {"MMXT":"Mean max temp", "MMNT":"Mean min temp",
-        "EMXT":"Max temp", "EMNT":"Min temp",
-        "MNTM":"Mean temp", "HTDD":"Heating degree days",
-        "CLDD":"Cooling Degree Days", "BMXT":"Highest", "BMNT": "Lowest",
-        "DT90":"Days w/ max over 90", "DX32":"Days w/ max under 32",
+        "EMXT":"Max temp",             "EMNT":"Min temp", "MNTM":"Mean temp",
+        "HTDD":"Heating degree days",  "CLDD":"Cooling degree days",
+        "BMXT":"Highest",              "BMNT": "Lowest",
+        "DT90":"Days w/ max over 90",  "DX32":"Days w/ max under 32",
         "DT32":"Days w/ min under 32", "DT00":"Days w/ min under 0",
-        "TPCP":"Total precip", "BMXP":"Greatest observed precip",
-        "TSNW":"Total snow fall", "MXSD":"Max. snow depth",
-        "DP01":"Days >0.1\" precip", "DP05":"Days >0.5\" precip",
-        "DP10":"Days >1.0\" precip", "EMXP":"Max daily precip"}
+        "TPCP":"Total precip",         "BMXP":"Greatest observed precip",
+        "TSNW":"Total snow fall",      "MXSD":"Max. snow depth",
+        "DP01":"Days >0.1\" precip",   "DP05":"Days >0.5\" precip",
+        "DP10":"Days >1.0\" precip",   "EMXP":"Max daily precip"}
     zipNdx = 0
     zips = getZIPs(city, state)
     weatherHTML = "<h2>Weather info</h2>\n"
-    seasons = ["Winter", "Spring", "Summer", "Fall"]
+    seasons = ["Winter", "Spring", "Summer", "Fall"] # all you have to do is call
     for i in range(4):
         seasonHTML = ""
         # This loop's purpose is to find the weather data for the first zip code
@@ -229,7 +264,8 @@ def weather(city, state):
 
 # zillowMortgage
 #
-# Gets info from the Zillow web service about mortgages in a given state
+# Gets info from the Zillow web service about mortgages in a given state. Zillow
+# reports the data from the last week.
 #
 # Parameters:
 #   state: the state for which mortgage data should be found
@@ -245,17 +281,17 @@ def zillowMortgage(state):
         return "<p>zillowMortgage: " + mortgage["message"]["text"] + "</p>"
     lastWeek = mortgage["response"]["lastWeek"]
     mortgageHTML = ("<h2>Mortgages in " + state + "</h2>\n" +
-                    "<p><strong>30 year fixed rate loans:</strong> " +
-                    lastWeek["thirtyYearFixed"] + "% (from " + 
-                    lastWeek["thirtyYearFixedCount"] + " quotes)</p>\n" +
-                    "<p><strong>15 year fixed rate loans:</strong> " +
-                    lastWeek["fifteenYearFixed"] + "% (from " +
-                    lastWeek["fifteenYearFixedCount"] + " quotes)</p>\n" +
-                    "<p><strong>5/1 adjustable rate loans:</strong> " +
-                    lastWeek["fiveOneARM"] + "% (from " +
-                    lastWeek["fiveOneARMCount"] + " quotes)</p>\n" +
-                    "<p>See <a href=\"http://www.zillow.com/mortgage-rates/\">"
-                    + "mortgage rates</a> on Zillow</p>")
+            "<p><strong>30 year fixed rate loans:</strong> " +
+            lastWeek["thirtyYearFixed"] + "% (from " + 
+            lastWeek["thirtyYearFixedCount"] + " quotes)</p>\n" +
+            "<p><strong>15 year fixed rate loans:</strong> " +
+            lastWeek["fifteenYearFixed"] + "% (from " +
+            lastWeek["fifteenYearFixedCount"] + " quotes)</p>\n" +
+            "<p><strong>5/1 adjustable rate loans:</strong> " +
+            lastWeek["fiveOneARM"] + "% (from " +
+            lastWeek["fiveOneARMCount"] + " quotes)</p>\n" +
+            "<p>See <a href=\"http://www.zillow.com/mortgage-rates/\">"
+            + "mortgage rates</a> on Zillow</p>")
     return mortgageHTML
 
 # schoolRatings
@@ -278,11 +314,13 @@ def schoolRatings(city, state):
         try:
             school = schoolObj["school"]
             if school["testrating_text"] != "":
+                # Record just the numeric part of the test rating
                 spaceSplit = school["testrating_text"].split(" ")
                 aRating = int(spaceSplit[len(spaceSplit)-1])
                 ratingsList.append(aRating)
         except TypeError:
-            pass
+            pass # Occurs when the testrating_text is not formatted as expected.
+                 # I've not found an actual rating that runs into this issue
     ratingsList.sort()
     rateHTML = "<h2>School ratings (1-10)</h2>\n"
     rateHTML += ("<p><strong>Number of ratings:</strong> " + 
@@ -307,12 +345,30 @@ def schoolRatings(city, state):
 # Return value: a string containing demographics information (formatted with
 #   HTML)
 def zillowDemographics(city, state):
+
+    # pageHTML
+    #
+    # Creates an HTML representation of a "page" from the Zillow Demographics API
+    #
+    # Parameters:
+    #   page: a "page" XML element from the Zillow API
+    #
+    # Return value: an HTML representation of the "page" XML element
     def pageHTML(page):
         pageH = "<h2>" + page.find("name").text + "</h2>\n"
         tables = page.find("tables")
         for table in tables.findall("table"):
             pageH += tableHTML(table) + "\n"
         return pageH
+
+    # tableHTML
+    #
+    # Creates an HTML representation of a "table" from the Zillow Demographics API
+    #
+    # Parameters:
+    #   table: a "table" XML element from the Zillow API
+    #
+    # Return value: an HTML representation of the "table" element
     def tableHTML(table):
         if table.find("name").text not in zillowDemographics.tables:
             return ""
@@ -320,6 +376,16 @@ def zillowDemographics(city, state):
         for attribute in table.find("data").findall("attribute"):
             tableH += attributeHTML(attribute)
         return tableH
+
+    # attributeHTML
+    #
+    # Creates an HTML representation of an "attribute" from the Zillow
+    # Demographics API
+    #
+    # Parameters:
+    #   attr: an "attribute" XML element from the Zillow API
+    #
+    # Return value: an HTML representation of the "attribute" element
     def attributeHTML(attr):
         if attr.find("name").text not in zillowDemographics.names:
             return ""
@@ -334,11 +400,12 @@ def zillowDemographics(city, state):
         elif attr.find("value") is not None:
             attrHTML += attr.find("value").text + "</p>"
         return attrHTML
-    
+    # The names of the values I actually want to see 
     zillowDemographics.names = ["Zillow Home Value Index",
             "Median 3-Bedroom Home Value", "Median Home Size (Sq. Ft.)",
             "Avg. Year Built", "Median Household Income",
             "Median Age"]
+    # The names of the tables I actually want to see
     zillowDemographics.tables = ["Affordability Data",
             "Homes & Real Estate Data", "People Data"]
     
@@ -355,13 +422,15 @@ def zillowDemographics(city, state):
     for page in pages.findall("page"):
         demoHTML += pageHTML(page) + "\n"
     region = demoXML.find("response").find("region")
+    # This text is required by the API ToS
     demoHTML += ("<p><a href=\"" +
                  demoXML.find("response").find("links").find("forSale").text + 
                  "\">See " + region.find("city").text +
                  " Real Estate on Zillow</a></p>")
     return demoHTML
 
-print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n    \"http://www.w3.org/TR/html4/strict.dtd\">"
+print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n    \"http://www."
+        + "w3.org/TR/html4/strict.dtd\">")
 print "<html>"
 print "<head>"
 print "    <meta http-equiv=\"Content-type\" content=\"text/html;charset=UTF-8\">"
@@ -394,10 +463,18 @@ for line in sys.stdin:
     print zillowMortgage(state)
 
 print "</div>"
-print "<p>Mortgage and demographics data (c) Zillow, Inc., 2006-2013. Use is subject to <a href=\"http://www.zillow.com/corp/Terms.htm\">Terms of Use</a><br>"
-print "<a href=\"http://zillow.com/\"><img src=\"http://www.zillow.com/widgets/GetVersionedResource.htm?path=/static/logos/zmm_logo_small.gif\" width=\"145\" height=\"15\" alt=\"Zillow Real Estate Search\"></a><br>"
-print "<a href=\"http://www.zillow.com/wikipages/What-is-a-Zestimate/\">What's a Zestimate?</a></p>"
-print "<p>Schools data provided by <a href=\"http://www.education.com/schoolfinder/\"><img src=\"http://01.edu-cdn.com/i/logo/edu-logo-75x31.jpg\" alt=\"Education.com logo\"></a><br>"
+print ("<p>Mortgage and demographics data (c) Zillow, Inc., 2006-2013. Use is"
+        + "subject to <a href=\"http://www.zillow.com/corp/Terms.htm\">Terms "
+        + "of Use</a><br>")
+print ("<a href=\"http://zillow.com/\"><img src=\"http://www.zillow.com/widge"
+        + "ts/GetVersionedResource.htm?path=/static/logos/zmm_logo_small.gif"
+        + "\" width=\"145\" height=\"15\" alt=\"Zillow Real Estate Search\">"
+        + "</a><br>")
+print ("<a href=\"http://www.zillow.com/wikipages/What-is-a-Zestimate/\">What's"
+        + "a Zestimate?</a></p>")
+print ("<p>Schools data provided by <a href=\"http://www.education.com/schoolfi"
+        + "nder/\"><img src=\"http://01.edu-cdn.com/i/logo/edu-logo-75x31.jpg\""
+        + "alt=\"Education.com logo\"></a><br>")
 print "(c) Education.com, Inc. 2011. Use is subject to Terms of Service</p>"
 print "</body>"
 print "</html>"
