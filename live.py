@@ -183,12 +183,14 @@ def weather(city, state):
         pointOnes = ["CLDD", "MNTM", "EMXT", "EMNT", "MMXT", "MMNT"]
         toFahr = ["MNTM", "EMXT", "EMNT", "MMXT", "MMNT"]
         name = nameOf(dataType)
+        units = ""
         if dataType in pointOnes:
             value *= 0.1
         if dataType in toFahr:
             value *= 1.8
             value += 32.0
-        return ("<strong>" + name + ":</strong> " + str(round((value), 2)))
+            units = "&deg;F"
+        return ("<strong>" + name + ":</strong> " + str(round(value, 2)) + units)
 
     # seasonInfo
     #
