@@ -9,6 +9,7 @@ import keys
 ZWS_KEY = keys.ZWS_KEY 
 EDU_KEY = keys.EDU_KEY 
 NCDC_KEY = keys.NCDC_KEY 
+ZIP_KEY = keys.ZIP_KEY
 
 # mean
 #
@@ -128,7 +129,7 @@ def latLon(city, state):
 # Return value: a list of zip codes for the given city 
 def getZIPs(city, state):
     zipRequest = urllib.urlopen("http://zipcodedistanceapi.redline13.com/rest/" 
-            + "city-zips.json/" + city + "/" + state)
+            + ZIP_KEY + "/city-zips.json/" + city + "/" + state)
     zipJSON = json.load(zipRequest)
     return zipJSON["zip_codes"]
 
@@ -204,7 +205,8 @@ def weather(city, state):
     #   HTML.
     def seasonInfo(zip, seasonCode):
         seasonToMonth = [[12, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
-        dCollection = {"DT90":0}
+        dCollection = {}
+        dCollCounts = {}
         for monthCode in seasonToMonth[seasonCode]:
             time.sleep(1) # NOAA API only allows 1 request/s. I really need a
                           # better solution than this.
@@ -217,17 +219,17 @@ def weather(city, state):
             for datum in data:
                 key = datum["dataType"][0]
                 # Add the value of the datum to the previous value for the datum
-                # in the collection of data.
-                # If there is no such previous value, the datum is added to the
-                # data collection
+                # in the collection of data (or to 0 if there is no previous
+                # value).
                 dCollection[key] = dCollection.get(key, 0) + datum["value"]
+                dCollCounts[key] = dCollCounts.get(key, 0) + 1
         
         seasonHTML = "<p>"
         for key in dCollection.keys():
-            # Because the data collection has been accumulating values for each
-            # month in the season, it must be divided by the number of months in
-            # the season.
-            val = 1.0*dCollection[key]/len(seasonToMonth[seasonCode])
+            # Because the data collection has been accumulating values, each
+            # value needs to be divided by the number of data points it had.
+            # Note that this is not simply the number of months in the season.
+            val = 1.0*dCollection[key]/dCollCounts[key]
             seasonHTML += (formatData(key, val) + "<br>\n")
         seasonHTML += "</p>"
         return seasonHTML
@@ -471,7 +473,7 @@ print ("<a href=\"http://zillow.com/\"><img src=\"http://www.zillow.com/widge"
         + "\" width=\"145\" height=\"15\" alt=\"Zillow Real Estate Search\">"
         + "</a><br>")
 print ("<a href=\"http://www.zillow.com/wikipages/What-is-a-Zestimate/\">What's"
-        + "a Zestimate?</a></p>")
+        + " a Zestimate?</a></p>")
 print ("<p>Schools data provided by <a href=\"http://www.education.com/schoolfi"
         + "nder/\"><img src=\"http://01.edu-cdn.com/i/logo/edu-logo-75x31.jpg\""
         + "alt=\"Education.com logo\"></a><br>")
