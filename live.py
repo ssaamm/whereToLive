@@ -18,16 +18,13 @@ ZIP_KEY = keys.ZIP_KEY
 # Parameters:
 #   listOfNumbers: the list of numbers for which the mean should be calculated
 #
-# Return value: the arithmetic mean of the given numbers
+# Return value: the arithmetic mean of the given numbers, or 0 if the list is
+# empty.
 def mean(listOfNumbers):
-    mean = -1.0
-    sum = 0.0
-    count = len(listOfNumbers)
-    for number in listOfNumbers:
-        sum += number
-    if count > 0:
-        mean = sum/count
-    return mean
+    try:
+        return 1.0*sum(listOfNumbers)/len(listOfNumbers)
+    except ZeroDivisionError:
+        return 0.0
 
 # median
 #
@@ -73,7 +70,7 @@ def getRange(sortedListOfNumbers):
 #
 # Calculates the standard deviation of a sample. Standard deviation of a sample
 # is defined as sqrt((1/N) * the sum from i=1 to N of (x sub i - x bar)^2).
-# (I think in LaTeX that would be
+# (Wikipedia says this:
 #   s = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2} )
 #
 # Parameters:
@@ -200,8 +197,8 @@ def weather(city, state):
     # Parameters
     #   zip: the zip code for which to find the weather data
     #   seasonCode: the number corresponding with the season for which the
-    #       weather should be found. 1 is Winter, 2 is Spring, 3 is Summer, and
-    #       4 is Fall.
+    #       weather should be found. 0 is Winter, 1 is Spring, 2 is Summer, and
+    #       3 is Fall.
     #
     # Return value: a string containing the weather information. Formatted with
     #   HTML.
@@ -467,6 +464,7 @@ for line in sys.stdin:
     print zillowMortgage(state)
 
 print "</div>"
+# This text required by API ToS
 print ("<p>Mortgage and demographics data (c) Zillow, Inc., 2006-2013. Use is"
         + "subject to <a href=\"http://www.zillow.com/corp/Terms.htm\">Terms "
         + "of Use</a><br>")
